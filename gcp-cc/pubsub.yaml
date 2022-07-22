@@ -1,0 +1,36 @@
+# GCP PubSub Subsription
+---
+apiVersion: pubsub.cnrm.cloud.google.com/v1beta1
+kind: PubSubSubscription
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: my-project
+  name: my-app-subscription
+spec:
+  ackDeadlineSeconds: 10
+  messageRetentionDuration: 604800s
+  retainAckedMessages: false
+  enableMessageOrdering: false
+  filter: attributes.x-website = "filter-Attr"
+  topicRef:
+    name: my-app-topic
+  retryPolicy:
+    minimumBackoff: 10s
+    maximumBackoff: 600s
+---
+# And GCP IAM Policy for this specific PubSub Subscription
+# Remember we specified GCP Project level permissions, but below we can assign permissions to specific PubSub object
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPartialPolicy
+metadata:
+  name: my-app-iam-subscription
+spec:
+  resourceRef:
+    apiVersion: pubsub.cnrm.cloud.google.com/v1beta1
+    kind: PubSubSubscription
+    name: my-app-subscription
+  bindings:
+    - role: roles/pubsub.subscriber
+      members:
+        - member: serviceAccount:my-app-gcp-sa@my-project.iam.gserviceaccount.com
+---

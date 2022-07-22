@@ -1,0 +1,53 @@
+# GCP SA
+---
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMServiceAccount
+metadata:
+  annotations:
+    cnrm.cloud.google.com/project-id: my-project
+  labels: {}
+  name: my-app-gcp-sa
+spec:
+  displayName:  my-app-gcp-sa
+  description: Service account used as Workload Identity in 'my-app' microservice running on GKE
+  disabled: false
+---
+
+# WorkloadIdentity Binding
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+kind: IAMPolicy
+metadata:
+  name: my-app-iam-policy
+  annotations:
+    cnrm.cloud.google.com/project-id: my-project
+spec:
+  resourceRef:
+    apiVersion: iam.cnrm.cloud.google.com/v1beta1
+    kind: IAMServiceAccount
+    name: my-app-gcp-sa
+  bindings:
+    - role: roles/iam.workloadIdentityUser
+      members:
+        - serviceAccount:my_project.svc.id.goog[default/my-app-sa]
+---
+
+# Bind project policies
+# ["roles/pubsublite.publisher", "roles/pubsublite.subscriber"]
+# Note! you can specify a refference to an object and literary email of GCP SA
+apiVersion: iam.cnrm.cloud.google.com/v1beta1
+  kind: IAMPartialPolicy
+  metadata:
+    name: iampartialpolicy-sample-project
+  spec:
+    resourceRef:
+      kind: Project
+      name: iampartialpolicy-dep-project
+    bindings:
+      - role: "roles/pubsublite.publisher"
+        members:
+          - member: serviceAccount:my-app-gcp-sa@my-project.iam.gserviceaccount.com
+      - role: "roles/pubsublite.subscriber"
+        members:
+          - memberFrom:
+              serviceAccountRef:
+                name: my-app-gcp-sa
